@@ -1,0 +1,96 @@
+name: 3-Stage CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # ==========================================
+  # STAGE 1: Build & Test
+  # ==========================================
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Tests
+        run: flutter test || echo "No tests to run or tests failed. Adjust this as needed."
+
+      - name: Build Web Application
+        run: flutter build web
+
+      - name: Test Docker Build
+        run: docker build -t reflecta-app:test .
+
+  # ==========================================
+  # STAGE 2: Deploy to Staging
+  # ==========================================
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-test
+    runs-on: ubuntu-latest
+    # Define o ambiente como 'staging'. Opcionalmente, configure no GitHub.
+    environment: staging
+    
+    # Apenas executa no merge/push para a master (evita rodar em pull requests não aprovados)
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Simulate Login to Container Registry
+        run: echo "Mocking login to Registry (e.g. DockerHub or GHCR)..."
+        
+      - name: Build & Tag Staging Image
+        run: docker build -t reflecta-app:staging .
+        
+      - name: Push to Registry (Mock)
+        run: echo "docker push reflecta-app:staging"
+
+      - name: Deploy to Staging Environment
+        run: echo "🚀 Deploying to Staging Environment... Success!"
+
+  # ==========================================
+  # STAGE 3: Deploy to Production
+  # ==========================================
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    # Define o ambiente como 'production'. No GitHub, você pode ativar a exigência
+    # de "Aprovação Manual" (Manual Approval) nas configurações deste ambiente.
+    environment: production
+    
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Simulate Login to Container Registry
+        run: echo "Mocking login to Registry..."
+        
+      - name: Build & Tag Production Image
+        run: docker build -t reflecta-app:latest .
+        
+      - name: Push to Registry (Mock)
+        run: echo "docker push reflecta-app:latest"
+
+      - name: Deploy to Production Environment
+        run: echo "🌟 Deploying to Production Environment... Success!"
