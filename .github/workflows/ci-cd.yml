@@ -43,7 +43,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     needs: build-test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     # Define o ambiente como 'staging'. Opcionalmente, configure no GitHub.
     environment: staging
     
@@ -54,17 +54,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Simulate Login to Container Registry
-        run: echo "Mocking login to Registry (e.g. DockerHub or GHCR)..."
-        
-      - name: Build & Tag Staging Image
-        run: docker build -t reflecta-app:staging .
-        
-      - name: Push to Registry (Mock)
-        run: echo "docker push reflecta-app:staging"
-
-      - name: Deploy to Staging Environment
-        run: echo "🚀 Deploying to Staging Environment... Success!"
+      - name: Deploy to Staging Environment (On-Premise)
+        run: |
+          echo "🚀 Deploying Staging on self-hosted runner..."
+          docker build -t reflecta-app:staging .
+          docker stop reflecta-staging || true
+          docker rm reflecta-staging || true
+          docker run -d -p 8080:80 --name reflecta-staging reflecta-app:staging
+          echo "✅ Staging is running on port 8080!"
 
   # ==========================================
   # STAGE 3: Deploy to Production
@@ -72,7 +69,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     needs: deploy-staging
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     # Define o ambiente como 'production'. No GitHub, você pode ativar a exigência
     # de "Aprovação Manual" (Manual Approval) nas configurações deste ambiente.
     environment: production
@@ -83,14 +80,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Simulate Login to Container Registry
-        run: echo "Mocking login to Registry..."
-        
-      - name: Build & Tag Production Image
-        run: docker build -t reflecta-app:latest .
-        
-      - name: Push to Registry (Mock)
-        run: echo "docker push reflecta-app:latest"
-
-      - name: Deploy to Production Environment
-        run: echo "🌟 Deploying to Production Environment... Success!"
+      - name: Deploy to Production Environment (On-Premise)
+        run: |
+          echo "🌟 Deploying Production on self-hosted runner..."
+          docker build -t reflecta-app:latest .
+          docker stop reflecta-production || true
+          docker rm reflecta-production || true
+          docker run -d -p 80:80 --name reflecta-production reflecta-app:latest
+          echo "✅ Production is running on port 80!"
