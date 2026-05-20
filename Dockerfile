@@ -1,7 +1,7 @@
 # ==========================================
 # Estágio 1: Build (Compilação da Aplicação)
 # ==========================================
-FROM debian:bullseye-slim AS build-env
+FROM public.ecr.aws/docker/library/debian:bullseye-slim AS build-env
 
 # Instalar dependências de sistema necessárias para o Flutter
 RUN apt-get update && \
@@ -36,7 +36,7 @@ RUN flutter build web --release
 # ==========================================
 # Estágio 2: Run (Servir com Nginx)
 # ==========================================
-FROM nginx:alpine
+FROM public.ecr.aws/nginx/nginx:alpine
 
 # Opcional: Remover os ficheiros padrão do Nginx
 RUN rm -rf /usr/share/nginx/html/*
